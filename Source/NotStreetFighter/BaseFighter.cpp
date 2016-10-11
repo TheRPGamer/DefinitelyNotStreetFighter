@@ -11,7 +11,7 @@ ABaseFighter::ABaseFighter()
 	PrimaryActorTick.bCanEverTick = true;
     fMaxHP = 100.0f;
     fCurrHP = fMaxHP;
-    fCurrentSuperGauge = 0.0f;
+    fCurrentSuperGauge = 100.0f;
     
     iAirdashCounter=0;
     iAirDashLimit = 1;
@@ -27,7 +27,8 @@ ABaseFighter::ABaseFighter()
     GetCharacterMovement()->AirControl = 0.9f;
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->bConstrainToPlane = true;
-    GetCharacterMovement()-> SetPlaneConstraintNormal(FVector(0.0f, -1.0f, 0.0f));
+    //This is for LOCAL space, not world space
+    GetCharacterMovement()-> SetPlaneConstraintNormal(FVector(1.0f, 0.0f, 0.0f));
     
 }
 
@@ -51,6 +52,7 @@ void ABaseFighter::SetupPlayerInputComponent(class UInputComponent* InputCompone
 	Super::SetupPlayerInputComponent(InputComponent);
     InputComponent->BindAxis("MoveRight", this, &ABaseFighter::MoveHorizontal);
     InputComponent->BindAction("Crouch", IE_Pressed, this, &ABaseFighter::MoveCrouch);
+    InputComponent->BindAction("Jumpo", IE_Pressed, this, &ABaseFighter::MoveJump);
 
 }
 
@@ -76,3 +78,12 @@ void ABaseFighter::MoveAirDash()
 {
     
 }
+
+float ABaseFighter::GetHPPercent()
+{
+    if(fCurrHP<0)
+        return 0;
+    else
+        return (fCurrHP / fMaxHP);
+}
+

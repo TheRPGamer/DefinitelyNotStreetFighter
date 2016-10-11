@@ -23,10 +23,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterStats")
     float fMaxHP;
     
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterStats")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CharacterStats")
     float fCurrHP;
     
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterStats")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CharacterStats")
     float fCurrentSuperGauge;
     
     
@@ -45,7 +45,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterStats")
     float fDashSpeed;
     
-public:
+    
+    
+    protected:
     bool bIsBlockingHigh;
     bool bIsBlockingLow;
     bool bIsInAir;
@@ -59,6 +61,13 @@ public:
     virtual void MoveCrouch()override;
     virtual void MoveDash()override;
     virtual void MoveAirDash()override;
+    
+public:
+    UFUNCTION(BlueprintCallable, Category = "HP")
+    float GetHPPercent();
+    
+    UFUNCTION(BlueprintCallable, Category = "Super")
+    float GetSuperPercent() {return (fCurrentSuperGauge / 100.0);}
     
 
 	
