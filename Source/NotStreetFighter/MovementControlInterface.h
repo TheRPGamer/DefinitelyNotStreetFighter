@@ -22,4 +22,10 @@ public:
     virtual void MoveCrouch(){}
     virtual void MoveDash(){}
     virtual void MoveAirDash(){}
+    virtual void LightPunch() {}
+    virtual void MediumPunch() {}
+    virtual void HeavyPunch() {}
+    virtual void LightKick() {}
+    virtual void MediumKick() {}
+    virtual void HeavyKick() {}
 }; 

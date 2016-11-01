@@ -26,4 +26,6 @@ private:
     
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta= (AllowPrivateAccess = "true"))
     USpringArmComponent* CameraBoom;
+public:
+    UCameraComponent* GetCamera() {return FightCamera;}
 };

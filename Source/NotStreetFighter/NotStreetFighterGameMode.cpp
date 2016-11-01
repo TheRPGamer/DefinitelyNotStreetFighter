@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "NotStreetFighter.h"
+#include "StageCamera.h"
+#include "EngineUtils.h" 
 #include "NotStreetFighterGameMode.h"
 
 ANotStreetFighterGameMode::ANotStreetFighterGameMode()
@@ -12,6 +14,7 @@ ANotStreetFighterGameMode::ANotStreetFighterGameMode()
     CurrTimer = MaxTimer;
     MaxRounds = 1;
     CurrRound = 1;
+    bShouldCallSuperBeginPlay = false;
 }
 
 
@@ -29,20 +32,27 @@ void ANotStreetFighterGameMode::Tick(float DeltaSeconds)
 
 void ANotStreetFighterGameMode::BeginPlay()
 {
-    UE_LOG(LogTemp, Log, TEXT("Begin Play.")); 
     //Game Mode Begin Play fire AFTER all the other actors
-    Super::BeginPlay();
-    auto It = GetWorld()->GetPlayerControllerIterator();
-    if(It)
-        Player1= Cast<ABaseFighter>((*It)->GetPawn());
-    ++It;
-    if(It)
-        Player2 = Cast<ABaseFighter>((*It)->GetPawn());
+    if(bShouldCallSuperBeginPlay)
+        Super::BeginPlay();
+    
+    Player1->SetActorLocation(FVector(0.0f, -100.0f, 108.1f));
+    Player2->SetActorLocation(FVector(0.0f, 100.0f, 108.1f));
+    CurrTimer = MaxTimer;
+    Player1->fCurrHP = Player1->fMaxHP;
+    Player2->fCurrHP = Player2->fMaxHP;
+    Player1->fCurrentSuperGauge = 0.0f;
+    Player2->fCurrentSuperGauge = 0.0f;
     
 }
 void ANotStreetFighterGameMode::StartPlay()
 {
-    UE_LOG(LogTemp, Log, TEXT("Start Play"));
+    UGameplayStatics::CreatePlayer(GetWorld(), 1);
+    Player1 = Cast<ABaseFighter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+    Player2 = Cast<ABaseFighter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 1));
+    BeginPlay();
+    CreateHUD();
+    bShouldCallSuperBeginPlay = true;
     if (MatchState == MatchState::EnteringMap)
     {
         SetMatchState(MatchState::WaitingToStart);
@@ -52,27 +62,32 @@ void ANotStreetFighterGameMode::StartPlay()
 
 void ANotStreetFighterGameMode::HandleMatchIsWaitingToStart()
 {
-    UE_LOG(LogTemp, Log, TEXT("Handle Match Waiting To Start"));
+    for(TActorIterator<AStageCamera> AIt(GetWorld()); AIt; ++AIt)
+    {
+        AStageCamera* camera = *AIt;
+        for(auto It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+        {
+            APlayerController* PC = *It;
+            PC->SetIgnoreMoveInput(true);
+            PC->SetViewTarget(camera); 
+        }
+        
+    }
     CreateRoundWidget();
     FTimerHandle StartMatchTimer;
-    GetWorld()->GetTimerManager().SetTimer(StartMatchTimer, this, &ANotStreetFighterGameMode::StartMatch, 2.0f);
+    GetWorld()->GetTimerManager().SetTimer(StartMatchTimer, this, &ANotStreetFighterGameMode::StartMatch, 4.0f);
     if (GameSession != NULL)
     {
         GameSession->HandleMatchIsWaitingToStart();
     }
-    GetWorldSettings()->NotifyBeginPlay();
-    for(auto It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-    {
-        APlayerController* PC = *It;
-        PC->SetIgnoreMoveInput(true); 
-    }
+    
     
 }
 
 
 void ANotStreetFighterGameMode::StartMatch()
 {
-    UE_LOG(LogTemp, Log, TEXT("Start Matdh"));
+    bShouldCallSuperBeginPlay = false;
     if (HasMatchStarted())
     {
         // Already started
@@ -92,67 +107,24 @@ void ANotStreetFighterGameMode::StartMatch()
 
 void ANotStreetFighterGameMode::HandleMatchHasStarted()
 {
-    UE_LOG(LogTemp, Log, TEXT("Handle Match Has Started."));
     //super notifies calls the begin play on everybody
     GameSession->HandleMatchHasStarted();
     
     // start human players first
-    for( FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator )
-    {
-        APlayerController* PlayerController = *Iterator;
-        if ((PlayerController->GetPawn() == NULL) && PlayerCanRestart(PlayerController))
-        {
-            RestartPlayer(PlayerController);
-        }
-    }
-    
-    // Make sure level streaming is up to date before triggering NotifyMatchStarted
-    GEngine->BlockTillLevelStreamingCompleted(GetWorld());
-    
-    
-    // Then fire off match started
-    GetWorldSettings()->NotifyMatchStarted();
-    
-    // if passed in bug info, send player to right location
-    const FString BugLocString = UGameplayStatics::ParseOption(OptionsString, TEXT("BugLoc"));
-    const FString BugRotString = UGameplayStatics::ParseOption(OptionsString, TEXT("BugRot"));
-    if( !BugLocString.IsEmpty() || !BugRotString.IsEmpty() )
-    {
-        for( FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator )
-        {
-            APlayerController* PlayerController = *Iterator;
-            if( PlayerController->CheatManager != NULL )
-            {
-                PlayerController->CheatManager->BugItGoString( BugLocString, BugRotString );
-            }
-        }
-    }
-    
-    if (IsHandlingReplays() && GetGameInstance() != nullptr)
-    {
-        GetGameInstance()->StartRecordingReplay(GetWorld()->GetMapName(), GetWorld()->GetMapName());
-    }
+    Super::HandleMatchHasStarted(); 
     //make input active
     for(auto It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
         APlayerController* PC = *It;
         PC->ResetIgnoreInputFlags();
-        if(PC->InputEnabled())
-        {
-            UE_LOG(LogTemp, Log, TEXT("Input is enabled"));
-        }
-        else
-        {
-            UE_LOG(LogTemp, Log, TEXT("Input NOT enabled"));
-        }
+        
     }
-    GetWorld()->GetTimerManager().SetTimer(CountDownTimer, this, &ANotStreetFighterGameMode::DecrementTimer, 1.0f, true);
+    //GetWorld()->GetTimerManager().SetTimer(CountDownTimer, this, &ANotStreetFighterGameMode::DecrementTimer, 1.0f, true);
     
 }
 
 void ANotStreetFighterGameMode::EndMatch()
 {
-    UE_LOG(LogTemp, Log, TEXT("End Match"));
     GetWorld()->GetTimerManager().ClearTimer(CountDownTimer);
     //See if a character won best of X
     //If best of X not finished, reset the match
@@ -164,7 +136,7 @@ void ANotStreetFighterGameMode::EndMatch()
     {
         //Reset HP, Positions etc
         SetMatchState(MatchState::WaitingToStart);
-        ResetMatch();
+        BeginPlay();
         CurrRound++; 
     }
         
@@ -181,7 +153,6 @@ void ANotStreetFighterGameMode::EndMatch()
 
 void ANotStreetFighterGameMode::HandleMatchHasEnded()
 {
-    UE_LOG(LogTemp, Log, TEXT("Handle Match Has End3d."));
     if(bWinner)
     {
         UE_LOG(LogTemp, Log, TEXT("Player 1 Wins!"));
@@ -200,20 +171,9 @@ void ANotStreetFighterGameMode::StartToLeaveMap()
     SetMatchState(MatchState::LeavingMap);
 }
 
-void AGameMode::HandleLeavingMap()
+void ANotStreetFighterGameMode::HandleLeavingMap()
 {
-    UE_LOG(LogTemp, Log, TEXT("Handle Leaving Map")); 
     ReturnToMainMenuHost();
-}
-
-void ANotStreetFighterGameMode::ResetMatch()
-{
-    //TODO Reset Position, HP, Timer etc
-    CurrTimer = 99;
-    Player1->fCurrHP = Player1->fMaxHP;
-    //Player2->fCurrHP = Player2->fMaxHP;
-    Player1->fCurrentSuperGauge = 0.0f;
-    //Player2->fCurrentSuperGauge = 0.0f;
 }
 
 

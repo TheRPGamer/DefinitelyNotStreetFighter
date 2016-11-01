@@ -4,6 +4,7 @@
 
 #include "GameFramework/Character.h"
 #include "MovementControlInterface.h"
+#include "ComboSystem.h" 
 #include "BaseFighter.generated.h"
 
 UCLASS()
@@ -61,6 +62,12 @@ public:
     virtual void MoveCrouch()override;
     virtual void MoveDash()override;
     virtual void MoveAirDash()override;
+    virtual void LightPunch() override;
+    virtual void MediumPunch() override;
+    virtual void HeavyPunch() override;
+    virtual void LightKick() override;
+    virtual void MediumKick() override;
+    virtual void HeavyKick() override;
     
 public:
     UFUNCTION(BlueprintCallable, Category = "HP")
@@ -68,8 +75,23 @@ public:
     
     UFUNCTION(BlueprintCallable, Category = "Super")
     float GetSuperPercent() {return (fCurrentSuperGauge / 100.0);}
+public:
+    UComboSystem* ComboSystem;
     
-
-	
-	
+protected:
+    bool b2Held;
+    bool b4Held;
+    bool b6Held;
+    bool b8Held;
+    bool bMoveHorizontalFirstPoll;
+protected:
+    void AddComboInputOnPress(char c);
+    void AddComboInputOnRelease(char c);
+    void OnJumpRelease();
+    void OnCrouchRelease();
+    
+    int testCounter;
+    
 };
+
+

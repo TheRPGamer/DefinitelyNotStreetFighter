@@ -28,6 +28,7 @@ protected:
     int32 P2WinCount;
     
     FTimerHandle CountDownTimer;
+    bool bShouldCallSuperBeginPlay; 
 protected:
     void Tick(float DeltaTime) override;
     void BeginPlay() override; 
@@ -40,26 +41,11 @@ protected:
     void EndMatch() override;
     void HandleMatchHasEnded() override;
     void StartToLeaveMap() override;
-    
+    void HandleLeavingMap() override; 
 protected:
-    void ResetMatch(); 
     FORCEINLINE void CountDown() {--CurrTimer;}
     
 public:
-    UFUNCTION(exec)
-    void Test()
-    {
-        StartMatch();
-        UE_LOG(LogTemp, Log, TEXT("Test")); 
-    
-    }
-    
-    UFUNCTION(exec)
-    void TestDamage()
-    {
-        Player1->fCurrHP -= 20; 
-    }
-    
     FORCEINLINE void DecrementTimer() {--CurrTimer;}
     
     
@@ -78,6 +64,9 @@ public:
     
     UFUNCTION(BlueprintImplementableEvent)
     void CreateRoundWidget();
+    
+    UFUNCTION(BlueprintImplementableEvent)
+    void CreateHUD(); 
 
     
 
