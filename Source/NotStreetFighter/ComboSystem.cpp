@@ -2,6 +2,7 @@
 
 #include "NotStreetFighter.h"
 #include "ComboSystem.h"
+#include "BaseFighter.h" 
 #include "Runtime/Core/Public/Misc/Char.h"
 #include <string>
 
@@ -20,7 +21,12 @@ UComboSystem::UComboSystem()
     CurrentIndex = 0;
     PreviousIndex = InputBuffer->Capacity()-1;
     StringFormationStartIndex = 0;
-    StringFormationEndIndex = 0; 
+    StringFormationEndIndex = 0;
+    
+    b2Held = false;
+    b4Held = false;
+    b6Held = false;
+    b8Held = false;
 }
 
 UComboSystem::~UComboSystem()
@@ -32,8 +38,7 @@ UComboSystem::~UComboSystem()
 void UComboSystem::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
+    // ...
 	
 }
 
@@ -83,5 +88,117 @@ FString UComboSystem::CreateComboString()
     }
     StringFormationStartIndex = StringFormationEndIndex;
     return input;
+}
+
+
+void UComboSystem::AddComboInputOnPress(char c)
+{
+    
+    GetWorld()->GetTimerManager().SetTimer(ResetBufferTimer, this, &UComboSystem::ResetBuffer, 0.3f);
+
+    switch((int32)c)
+    {
+        case 2:
+        {
+            if(b4Held)
+                AddToBuffer(1);
+            else if(b6Held)
+                AddToBuffer(3);
+            else
+                AddToBuffer(2);
+            break;
+        }
+        case 6:
+        {
+            if(b2Held)
+                AddToBuffer(3);
+            else if(b8Held)
+                AddToBuffer(9);
+            else
+                AddToBuffer(6);
+            break;
+        }
+            
+        case 8:
+        {
+            if(b6Held)
+                AddToBuffer(9);
+            else if(b4Held)
+                AddToBuffer(7);
+            else
+                AddToBuffer(8);
+            break;
+        }
+            
+        case 4:
+        {
+            if(b8Held)
+                AddToBuffer(7);
+            else if(b2Held)
+                AddToBuffer(1);
+            else
+                AddToBuffer(4);
+            break;
+        }
+        default:
+        {
+            AddToBuffer(c);
+            break;
+        }
+    }
+}
+
+void UComboSystem::AddComboInputOnRelease(char c)
+{
+    
+    GetWorld()->GetTimerManager().SetTimer(ResetBufferTimer, this, &UComboSystem::ResetBuffer, 0.3f);
+
+    switch((int32)c)
+    {
+        case 2:
+        {
+            if(b4Held)
+                AddToBuffer(4);
+            if(b6Held)
+                AddToBuffer(6);
+            break;
+        }
+        case 6:
+        {
+            if(b2Held)
+                AddToBuffer(2);
+            if(b8Held)
+                AddToBuffer(8);
+            break;
+        }
+            
+        case 8:
+        {
+            if(b6Held)
+                AddToBuffer(6);
+            if(b4Held)
+                AddToBuffer(4);
+            break;
+        }
+            
+        case 4:
+        {
+            if(b8Held)
+                AddToBuffer(8);
+            if(b2Held)
+                AddToBuffer(2);
+            break;
+            
+        }
+    }
+}
+
+void UComboSystem::ResetBuffer()
+{
+    FString combo = CreateComboString();
+    UE_LOG(LogTemp, Log, TEXT("Combo String: %s"), *combo);
+    Owner->ProcessComboString(FName(*combo));
+    StringFormationStartIndex = StringFormationEndIndex;
+    GetWorld()->GetTimerManager().ClearTimer(ResetBufferTimer); 
 }
 

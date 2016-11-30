@@ -25,9 +25,6 @@ void ANotStreetFighterGameMode::Tick(float DeltaSeconds)
     {
         EndMatch();
     }
-    
-    
-    
 }
 
 void ANotStreetFighterGameMode::BeginPlay()

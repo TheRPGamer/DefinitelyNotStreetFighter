@@ -5,6 +5,7 @@
 #include "GameFramework/Character.h"
 #include "MovementControlInterface.h"
 #include "ComboSystem.h" 
+#include "Sound/SoundCue.h" 
 #include "BaseFighter.generated.h"
 
 UCLASS()
@@ -56,7 +57,7 @@ public:
     int32 iJumpLimit;
     int32 iDashLimit;
     int32 iAirDashLimit;
-public:
+protected:
     virtual void MoveHorizontal(float value) override;
     virtual void MoveJump()override;
     virtual void MoveCrouch()override;
@@ -75,22 +76,35 @@ public:
     
     UFUNCTION(BlueprintCallable, Category = "Super")
     float GetSuperPercent() {return (fCurrentSuperGauge / 100.0);}
+    UFUNCTION(BlueprintCallable, Category = "SoundCues")
+    USoundCue* GetCharacterTheme() {return CharacterThemeSound;}
+    virtual void ProcessComboString(FName combo){}
+
 public:
-    UComboSystem* ComboSystem;
+    UPROPERTY(transient)
+    UAudioComponent* PlayerVoiceAC;
+    UPROPERTY(transient)
+    UAudioComponent* PlayerAttacksAC;
+    UPROPERTY(transient)
+    UAudioComponent* PlayerThemeAC;
+protected:
+    UPROPERTY(EditDefaultsOnly, Category = "SoundCues")
+    USoundCue* CharacterThemeSound;
+    UPROPERTY(EditDefaultsOnly, Category = "SoundCues")
+    TArray<USoundCue*> PlayerVoiceSoundArray;
+    UPROPERTY(EditDefaultsOnly, Category = "SoundCues")
+    TArray<USoundCue*> PlayerAttacksSoundArray;
     
 protected:
-    bool b2Held;
-    bool b4Held;
-    bool b6Held;
-    bool b8Held;
-    bool bMoveHorizontalFirstPoll;
+    UAudioComponent* CreateAC(USoundCue* cue); 
 protected:
-    void AddComboInputOnPress(char c);
-    void AddComboInputOnRelease(char c);
+    UComboSystem* ComboSystem;
+private:
+    bool bMoveHorizontalFirstPoll;
+private:
     void OnJumpRelease();
     void OnCrouchRelease();
     
-    int testCounter;
     
 };
 

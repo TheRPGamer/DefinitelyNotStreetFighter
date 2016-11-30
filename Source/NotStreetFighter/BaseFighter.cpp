@@ -19,6 +19,9 @@ ABaseFighter::ABaseFighter()
     iDashLimit = 1;
     iJumpCounter = 0;
     iJumpLimit = 1;
+    PlayerAttacksAC = nullptr;
+    PlayerVoiceAC = nullptr;
+    PlayerThemeAC = nullptr;
     
     GetCharacterMovement()->GravityScale = 2.0f;
     GetCharacterMovement()->GroundFriction = 3.0f;
@@ -30,21 +33,18 @@ ABaseFighter::ABaseFighter()
     //This is for LOCAL space, not world space
     GetCharacterMovement()-> SetPlaneConstraintNormal(FVector(1.0f, 0.0f, 0.0f));
     
-    b2Held = false;
-    b4Held = false;
-    b6Held = false;
-    b8Held = false;
+    
     bMoveHorizontalFirstPoll = true;
     
     ComboSystem = CreateDefaultSubobject<UComboSystem>(TEXT("ComboSystem"));
     
-    testCounter = 0;
 }
 
 // Called when the game starts or when spawned
 void ABaseFighter::BeginPlay()
 {
 	Super::BeginPlay();
+    
 	
 }
 
@@ -52,13 +52,7 @@ void ABaseFighter::BeginPlay()
 void ABaseFighter::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
-    testCounter++;
-    if(testCounter == 150)
-    {
-        FString fstring = ComboSystem->CreateComboString();
-        UE_LOG(LogTemp, Log, TEXT("Combo String: %s"), *fstring);
-        testCounter = 0;
-    }
+    
 
 }
 
@@ -88,14 +82,15 @@ void ABaseFighter::SetupPlayerInputComponent(class UInputComponent* InputCompone
  */
 void ABaseFighter::MoveHorizontal(float value)
 {
-    if(value > 0) b6Held =true;
-    if(value < 0) b4Held = true;
+    if(value > 0) ComboSystem->b6Held =true;
+    if(value < 0) ComboSystem->b4Held = true;
+    
     if (value == 0)
     {
-        if(b6Held) AddComboInputOnRelease(6);
-        if(b4Held) AddComboInputOnRelease(4);
-        b4Held = false;
-        b6Held = false;
+        if(ComboSystem->b6Held) ComboSystem->AddComboInputOnRelease(6);
+        if(ComboSystem->b4Held) ComboSystem->AddComboInputOnRelease(4);
+        ComboSystem->b4Held = false;
+        ComboSystem->b6Held = false;
         bMoveHorizontalFirstPoll = true;
         
     }
@@ -106,8 +101,8 @@ void ABaseFighter::MoveHorizontal(float value)
         AddMovementInput(FVector(0.0f, 1.0f, 0.0f), value);
         if(bMoveHorizontalFirstPoll)
         {
-            if(value > 0) AddComboInputOnPress(6);
-            if(value < 0) AddComboInputOnPress(4);
+            if(value > 0) ComboSystem->AddComboInputOnPress(6);
+            if(value < 0) ComboSystem->AddComboInputOnPress(4);
             bMoveHorizontalFirstPoll = false;
         }
     
@@ -116,15 +111,15 @@ void ABaseFighter::MoveHorizontal(float value)
 void ABaseFighter::MoveJump()
 {
     ACharacter::Jump();
-    b8Held = true;
-    AddComboInputOnPress(8);
+    ComboSystem->b8Held = true;
+    ComboSystem->AddComboInputOnPress(8);
     
 }
 void ABaseFighter::MoveCrouch()
 {
     GetCharacterMovement()->Crouch();
-    b2Held = true;
-    AddComboInputOnPress(2);
+    ComboSystem->b2Held = true;
+    ComboSystem->AddComboInputOnPress(2);
 }
 void ABaseFighter::MoveDash()
 {
@@ -143,137 +138,50 @@ float ABaseFighter::GetHPPercent()
     return (fCurrHP / fMaxHP);
 }
 
-void ABaseFighter::AddComboInputOnPress(char c)
-{
-    switch((int32)c)
-    {
-        case 2:
-        {
-            if(b4Held)
-                ComboSystem->AddToBuffer(1);
-            else if(b6Held)
-                ComboSystem->AddToBuffer(3);
-            else
-                ComboSystem->AddToBuffer(2);
-            break;
-        }
-        case 6:
-        {
-            if(b2Held)
-                ComboSystem->AddToBuffer(3);
-            else if(b8Held)
-                ComboSystem->AddToBuffer(9);
-            else
-                ComboSystem->AddToBuffer(6);
-            break;
-        }
-            
-        case 8:
-        {
-            if(b6Held)
-                ComboSystem->AddToBuffer(9);
-            else if(b4Held)
-                ComboSystem->AddToBuffer(7);
-            else
-                ComboSystem->AddToBuffer(8);
-            break;
-        }
-            
-        case 4:
-        {
-            if(b8Held)
-                ComboSystem->AddToBuffer(7);
-            else if(b2Held)
-                ComboSystem->AddToBuffer(1);
-            else
-                ComboSystem->AddToBuffer(4);
-            break;
-        }
-        default:
-        {
-            ComboSystem->AddToBuffer(c);
-            break; 
-        }
-    }
-}
-
-void ABaseFighter::AddComboInputOnRelease(char c)
-{
-    
-    switch((int32)c)
-    {
-        case 2:
-        {
-            if(b4Held)
-                ComboSystem->AddToBuffer(4);
-            if(b6Held)
-                ComboSystem->AddToBuffer(6);
-            break;
-        }
-        case 6:
-        {
-            if(b2Held)
-                ComboSystem->AddToBuffer(2);
-            if(b8Held)
-                ComboSystem->AddToBuffer(8);
-            break;
-        }
-                
-        case 8:
-        {
-            if(b6Held)
-                ComboSystem->AddToBuffer(6);
-            if(b4Held)
-                ComboSystem->AddToBuffer(4);
-            break;
-        }
-                
-        case 4:
-        {
-            if(b8Held)
-                ComboSystem->AddToBuffer(8);
-            if(b2Held)
-                ComboSystem->AddToBuffer(2);
-            break;
-                
-        }
-    }
-}
-
 void ABaseFighter::OnJumpRelease()
 {
-    AddComboInputOnRelease(8);
-    b8Held = false;
+    ComboSystem->AddComboInputOnRelease(8);
+    ComboSystem->b8Held = false;
 }
 
 void ABaseFighter::OnCrouchRelease()
 {
-    AddComboInputOnRelease(2);
-    b2Held = false;
+    ComboSystem->AddComboInputOnRelease(2);
+    ComboSystem->b2Held = false;
 }
 
 void ABaseFighter::LightPunch()
 {
-    AddComboInputOnPress('a');
+    ComboSystem->AddComboInputOnPress('a');
 }
 
 void ABaseFighter::MediumPunch()
 {
-    AddComboInputOnPress('b');
+    ComboSystem->AddComboInputOnPress('b');
 }
 void ABaseFighter::HeavyPunch()
 {
-    AddComboInputOnPress('c');
+    ComboSystem->AddComboInputOnPress('c');
 }
 void ABaseFighter::LightKick()
 {
-    AddComboInputOnPress('x');
+    ComboSystem->AddComboInputOnPress('x');
 }
 void ABaseFighter::MediumKick()
 {
-    AddComboInputOnPress('y');
+    ComboSystem->AddComboInputOnPress('y');
 }
 void ABaseFighter::HeavyKick()
 {
-    AddComboInputOnPress('z');
+    ComboSystem->AddComboInputOnPress('z');
+}
+
+UAudioComponent* ABaseFighter::CreateAC(USoundCue* cue)
+{
+    UAudioComponent* audio = nullptr;
+    if(cue)
+    {
+        audio = UGameplayStatics::SpawnSoundAttached(cue, RootComponent);
+    }
+    return audio; 
 }

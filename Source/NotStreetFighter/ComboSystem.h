@@ -21,9 +21,12 @@ public:
 	
 	// Called every frame
 	virtual void TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction ) override;
+    void AddComboInputOnPress(char c);
+    void AddComboInputOnRelease(char c);
     void AddToBuffer(char c);
     char GetPreviousEntry();
     FString CreateComboString();
+    void SetOwner(class ABaseFighter* fighter) {Owner = fighter;}
 protected:
     TCircularBuffer<char>* InputBuffer;
     int32 CurrentIndex;
@@ -31,5 +34,13 @@ protected:
     int32 StringFormationStartIndex;
     int32 StringFormationEndIndex;
     FTimerHandle ResetBufferTimer;
-    bool bLegalComboFound; 
+public:
+    bool b2Held;
+    bool b4Held;
+    bool b6Held;
+    bool b8Held;
+private:
+    void ResetBuffer();
+private:
+    class ABaseFighter* Owner;
 };

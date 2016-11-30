@@ -12,7 +12,14 @@ UCLASS()
 class NOTSTREETFIGHTER_API ANotRyu : public ABaseFighter
 {
 	GENERATED_BODY()
-	
+public:
+    virtual void BeginPlay() override;
+protected:
+    void Hadouken();
+    void Shoryuken();
+    void Tatsu();
+    void ShinkuHadouken();
+    void ProcessComboString(FName combo) override;
 	
 	
 	
